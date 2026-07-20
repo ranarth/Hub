@@ -1,19 +1,21 @@
 --[[
     ==========================================
-    RANARTH LIB - GALAXY GLOW lmao
-    Library UI ala gue sendiri.
+    RANARTH LIB 
+
+    CreateWindow otomatis membuat 3 halaman bawaan: Profile, Games, Settings
+    (persis seperti Ranarth Hub asli, lengkap dengan icon & webhook Discord).
+
     Cara pakai:
 
     local Ranarth = loadstring(game:HttpGet("URL_KAMU_DISINI"))()
 
     local Window = Ranarth:CreateWindow({
         Name = "Ranarth Hub",
-        Webhook = "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k" -- opsional, bisa dikosongkan
+        Webhook = "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k"
     })
 
-    local Tab = Window:CreateTab({Name = "Games", Icon = "rbxassetid://0"})
-
-    Tab:CreateGameButton({
+    -- Tab Games sudah otomatis dibuat, tinggal isi daftar game:
+    Window.GamesTab:CreateGameButton({
         Name = "Natural Disaster Survival",
         PlaceId = 189707,
         Callback = function()
@@ -21,10 +23,12 @@
         end
     })
 
-    Tab:CreateButton({Name = "Contoh Tombol Biasa", Callback = function() print("klik") end})
-    Tab:CreateToggle({Name = "Contoh Toggle", Default = false, Callback = function(v) print(v) end})
-    Tab:CreateSlider({Name = "Contoh Slider", Min = 0, Max = 100, Default = 50, Callback = function(v) print(v) end})
-    Tab:CreateLabel("Contoh label / section")
+    -- Mau tambah tab custom di luar Profile/Games/Settings? Masih bisa:
+    local ExtraTab = Window:CreateTab({Name = "Extra", Icon = "rbxassetid://0"})
+    ExtraTab:CreateButton({Name = "Contoh Tombol Biasa", Callback = function() print("klik") end})
+    ExtraTab:CreateToggle({Name = "Contoh Toggle", Default = false, Callback = function(v) print(v) end})
+    ExtraTab:CreateSlider({Name = "Contoh Slider", Min = 0, Max = 100, Default = 50, Callback = function(v) print(v) end})
+    ExtraTab:CreateLabel("Contoh label / section")
     ==========================================
 ]]
 
@@ -63,6 +67,10 @@ local function GetCustomIcon(url, filename)
     return ""
 end
 
+local ProfileIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83bd1e82dbfad83d8de25919685307c902b50465/Profile.png"
+local GamesIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83bd1e82dbfad83d8de25919685307c902b50465/Games.png"
+local SettingsIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83bd1e82dbfad83d8de25919685307c902b50465/Settings.png"
+
 -- ==========================================
 -- LIBRARY / WINDOW / TAB
 -- ==========================================
@@ -84,15 +92,17 @@ function Library:CreateWindow(config)
     self._sidebarButtons = {}
 
     -- ---------- Optional Discord webhook ----------
-    if WebhookURL ~= "" and not string.find(WebhookURL, "MASUKKAN") then
+    if WebhookURL ~= "" and not string.find(WebhookURL, "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k") then
         task.spawn(function()
             local executorName = "Unknown"
             if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
             local gameName = game.Name
             pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+            local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
             local data = {
                 ["embeds"] = {{
                     ["title"] = WindowName .. " Executed!",
+                    ["description"] = "A user has executed your script library.",
                     ["color"] = tonumber(0x00FFFF),
                     ["fields"] = {
                         {["name"] = "Display Name", ["value"] = PlayerDisplayName, ["inline"] = true},
@@ -101,6 +111,7 @@ function Library:CreateWindow(config)
                         {["name"] = "Executor", ["value"] = executorName, ["inline"] = true},
                         {["name"] = "Game Name", ["value"] = gameName, ["inline"] = true},
                         {["name"] = "Game ID", ["value"] = tostring(game.PlaceId), ["inline"] = true},
+                        {["name"] = "Game Link", ["value"] = gameLink, ["inline"] = false},
                     },
                     ["thumbnail"] = {["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId="..PlayerId.."&width=420&height=420&format=png"}
                 }}
@@ -134,6 +145,9 @@ function Library:CreateWindow(config)
     local MainStroke = Instance.new("UIStroke", MainFrame)
     MainStroke.Thickness = 2
     table.insert(self.AnimatedStrokes, MainStroke)
+
+    local MainScale = Instance.new("UIScale", MainFrame)
+    self.MainScale = MainScale
 
     -- ---------- Header ----------
     local Header = Instance.new("Frame", MainFrame)
@@ -380,6 +394,147 @@ function Library:CreateWindow(config)
         end)
     end
 
+    -- ==========================================
+    -- MIAW
+    -- ==========================================
+
+    -- ---------- 1. Profile ----------
+    local ProfileTab = self:CreateTab({
+        Name = "Profile",
+        Icon = GetCustomIcon(ProfileIconURL, "Ranarth_Profile.png"),
+        NoListLayout = true,
+    })
+    self.ProfileTab = ProfileTab
+
+    local AvatarImage = Instance.new("ImageLabel", ProfileTab.Page)
+    AvatarImage.BackgroundColor3 = ElementColor
+    AvatarImage.Position = UDim2.new(0.5, -50, 0, 30)
+    AvatarImage.Size = UDim2.new(0, 100, 0, 100)
+    AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. PlayerId .. "&w=420&h=420"
+    Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(1, 0)
+
+    local AvatarStroke = Instance.new("UIStroke", AvatarImage)
+    AvatarStroke.Thickness = 2
+    table.insert(self.AnimatedStrokes, AvatarStroke)
+
+    local WelcomeText = Instance.new("TextLabel", ProfileTab.Page)
+    WelcomeText.BackgroundTransparency = 1
+    WelcomeText.Position = UDim2.new(0, 0, 0, 140)
+    WelcomeText.Size = UDim2.new(1, 0, 0, 30)
+    WelcomeText.Font = Enum.Font.GothamBold
+    WelcomeText.Text = "Welcome, " .. PlayerDisplayName .. "."
+    WelcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WelcomeText.TextSize = 22
+
+    local StatusText = Instance.new("TextLabel", ProfileTab.Page)
+    StatusText.BackgroundTransparency = 1
+    StatusText.Position = UDim2.new(0, 0, 0, 180)
+    StatusText.Size = UDim2.new(1, 0, 0, 25)
+    StatusText.Font = Enum.Font.GothamBold
+    StatusText.Text = "Status: Working!"
+    StatusText.TextColor3 = Color3.fromRGB(85, 255, 127)
+    StatusText.TextSize = 15
+
+    local TimeText = Instance.new("TextLabel", ProfileTab.Page)
+    TimeText.BackgroundTransparency = 1
+    TimeText.Position = UDim2.new(0, 0, 0, 210)
+    TimeText.Size = UDim2.new(1, 0, 0, 25)
+    TimeText.Font = Enum.Font.Gotham
+    TimeText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TimeText.TextSize = 14
+    task.spawn(function()
+        while task.wait(1) do TimeText.Text = "Time: " .. os.date("%A, %I:%M:%S %p") end
+    end)
+
+    local RegionText = Instance.new("TextLabel", ProfileTab.Page)
+    RegionText.BackgroundTransparency = 1
+    RegionText.Position = UDim2.new(0, 0, 0, 240)
+    RegionText.Size = UDim2.new(1, 0, 0, 25)
+    RegionText.Font = Enum.Font.Gotham
+    RegionText.Text = "Region: Fetching..."
+    RegionText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    RegionText.TextSize = 14
+    task.spawn(function()
+        pcall(function()
+            local response = game:HttpGet("https://ipapi.co/country_name/")
+            if response then RegionText.Text = "Region: " .. response:gsub("\n", "") else RegionText.Text = "Region: Unknown" end
+        end)
+    end)
+
+    -- ---------- 2. Games ----------
+    local GamesTab = self:CreateTab({
+        Name = "Games",
+        Icon = GetCustomIcon(GamesIconURL, "Ranarth_Games.png"),
+        NoListLayout = true,
+    })
+    self.GamesTab = GamesTab
+
+    local SearchBoxContainer = Instance.new("Frame", GamesTab.Page)
+    SearchBoxContainer.Size = UDim2.new(1, 0, 0, 50)
+    SearchBoxContainer.BackgroundTransparency = 1
+
+    local SearchBox = Instance.new("TextBox", SearchBoxContainer)
+    SearchBox.Size = UDim2.new(0.9, 0, 0, 35)
+    SearchBox.Position = UDim2.new(0.05, 0, 0, 10)
+    SearchBox.BackgroundColor3 = ElementColor
+    SearchBox.TextColor3 = Color3.new(1, 1, 1)
+    SearchBox.PlaceholderText = "Search games..."
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.TextSize = 14
+    SearchBox.Text = ""
+    Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIPadding", SearchBox).PaddingLeft = UDim.new(0, 10)
+
+    local SearchStroke = Instance.new("UIStroke", SearchBox)
+    SearchStroke.Thickness = 1
+    SearchStroke.Transparency = 0.5
+    table.insert(self.AnimatedStrokes, SearchStroke)
+
+    local GameListScroll = Instance.new("ScrollingFrame", GamesTab.Page)
+    GameListScroll.Position = UDim2.new(0, 0, 0, 55)
+    GameListScroll.Size = UDim2.new(1, 0, 1, -55)
+    GameListScroll.BackgroundTransparency = 1
+    GameListScroll.ScrollBarThickness = 3
+    GameListScroll.ScrollBarImageColor3 = NeonColor
+    GameListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    GameListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+    local GameListLayout = Instance.new("UIListLayout", GameListScroll)
+    GameListLayout.Padding = UDim.new(0, 10)
+    GameListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    GamesTab.ButtonHolder = GameListScroll -- CreateGameButton/CreateButton dari tab ini masuk ke sini
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local text = SearchBox.Text:lower()
+        for _, child in pairs(GameListScroll:GetChildren()) do
+            if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text)) end
+        end
+    end)
+
+    -- ---------- 3. Settings ----------
+    local SettingsTab = self:CreateTab({
+        Name = "Settings",
+        Icon = GetCustomIcon(SettingsIconURL, "Ranarth_Settings.png"),
+    })
+    self.SettingsTab = SettingsTab
+
+    SettingsTab:CreateSlider({
+        Name = "UI Opacity", Min = 0, Max = 100, Default = 100, Suffix = "%",
+        Callback = function(value)
+            local transValue = 1 - (value / 100)
+            MainFrame.BackgroundTransparency = transValue
+            Sidebar.BackgroundTransparency = transValue
+            Header.BackgroundTransparency = transValue
+        end
+    })
+
+    SettingsTab:CreateSlider({
+        Name = "UI Size", Min = 50, Max = 150, Default = 100, Suffix = "%",
+        Callback = function(value) MainScale.Scale = value / 100 end
+    })
+
     return self
 end
 
@@ -402,10 +557,12 @@ function Window:CreateTab(config)
     page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     page.Visible = (next(self.Tabs) == nil) -- first tab created is visible by default
 
-    local layout = Instance.new("UIListLayout", page)
-    layout.Padding = UDim.new(0, 10)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 10)
+    if not config.NoListLayout then
+        local layout = Instance.new("UIListLayout", page)
+        layout.Padding = UDim.new(0, 10)
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 10)
+    end
 
     local sidebarBtn = Instance.new("ImageButton", self.ButtonContainer)
     sidebarBtn.BackgroundColor3 = ElementColor
@@ -425,6 +582,7 @@ function Window:CreateTab(config)
 
     local tabObj = setmetatable({
         Page = page,
+        ButtonHolder = page, -- CreateButton/CreateGameButton parent here; Games tab overrides this to its GameListScroll
         Window = self,
     }, Tab)
 
@@ -437,7 +595,7 @@ end
 -- ==========================================
 function Tab:CreateButton(config)
     config = config or {}
-    local btn = Instance.new("TextButton", self.Page)
+    local btn = Instance.new("TextButton", self.ButtonHolder or self.Page)
     btn.Size = UDim2.new(0.9, 0, 0, 45)
     btn.BackgroundColor3 = ElementColor
     btn.Text = config.Name or "Button"
@@ -464,7 +622,7 @@ function Tab:CreateGameButton(config)
     local callback = config.Callback or function() end
     local isUniversal = (placeId == 0)
 
-    local btn = Instance.new("TextButton", self.Page)
+    local btn = Instance.new("TextButton", self.ButtonHolder or self.Page)
     btn.Size = UDim2.new(0.9, 0, 0, 55)
     btn.BackgroundColor3 = ElementColor
     btn.Text = ""
@@ -529,7 +687,7 @@ end
 function Tab:CreateToggle(config)
     config = config or {}
     local state = config.Default or false
-    local container = Instance.new("Frame", self.Page)
+    local container = Instance.new("Frame", self.ButtonHolder or self.Page)
     container.BackgroundColor3 = ElementColor
     container.Size = UDim2.new(0.9, 0, 0, 45)
     Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
@@ -569,7 +727,7 @@ function Tab:CreateSlider(config)
     local default = config.Default or min
     local defaultPercent = (default - min) / (max - min)
 
-    local container = Instance.new("Frame", self.Page)
+    local container = Instance.new("Frame", self.ButtonHolder or self.Page)
     container.BackgroundTransparency = 1
     container.Size = UDim2.new(0.9, 0, 0, 50)
 
@@ -582,7 +740,7 @@ function Tab:CreateSlider(config)
     local valLabel = Instance.new("TextLabel", container)
     valLabel.BackgroundTransparency = 1; valLabel.Position = UDim2.new(1, -50, 0, 0)
     valLabel.Size = UDim2.new(0, 50, 0, 20); valLabel.Font = Enum.Font.GothamBold
-    valLabel.Text = tostring(math.floor(default))
+    valLabel.Text = tostring(math.floor(default)) .. (config.Suffix or "")
     valLabel.TextColor3 = NeonColor; valLabel.TextSize = 14
     valLabel.TextXAlignment = Enum.TextXAlignment.Right
 
@@ -613,7 +771,7 @@ function Tab:CreateSlider(config)
             local percent = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
             sliderFill.Size = UDim2.new(percent, 0, 1, 0)
             local value = min + ((max - min) * percent)
-            valLabel.Text = tostring(math.floor(value))
+            valLabel.Text = tostring(math.floor(value)) .. (config.Suffix or "")
             if config.Callback then config.Callback(value) end
         end
     end)
@@ -621,7 +779,7 @@ function Tab:CreateSlider(config)
 end
 
 function Tab:CreateLabel(text)
-    local label = Instance.new("TextLabel", self.Page)
+    local label = Instance.new("TextLabel", self.ButtonHolder or self.Page)
     label.BackgroundTransparency = 1
     label.Size = UDim2.new(0.9, 0, 0, 25)
     label.Font = Enum.Font.GothamBold
