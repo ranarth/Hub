@@ -1,35 +1,6 @@
 --[[
     ==========================================
-    RANARTH LIB (WITH ROCKET FIRE LOADING)
-
-    CreateWindow automatically creates 3 default pages: Profile, Games, Settings
-    (exactly like the original Ranarth Hub, complete with icons & Discord webhook).
-
-    How to use:
-
-    local Ranarth = loadstring(game:HttpGet("YOUR_URL_HERE"))()
-
-    local Window = Ranarth:CreateWindow({
-        Name = "Ranarth Hub",
-        -- Webhook is already embedded in the script as default!
-        -- Webhook = "..." (Optional, if you want to override the default one)
-    })
-
-    -- The Games tab is automatically created, just populate the game list:
-    Window.GamesTab:CreateGameButton({
-        Name = "Natural Disaster Survival",
-        PlaceId = 189707,
-        Callback = function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/.../NDS.lua"))()
-        end
-    })
-
-    -- Want to add custom tabs outside of Profile/Games/Settings? You still can:
-    local ExtraTab = Window:CreateTab({Name = "Extra", Icon = "rbxassetid://0"})
-    ExtraTab:CreateButton({Name = "Normal Button Example", Callback = function() print("clicked") end})
-    ExtraTab:CreateToggle({Name = "Toggle Example", Default = false, Callback = function(v) print(v) end})
-    ExtraTab:CreateSlider({Name = "Slider Example", Min = 0, Max = 100, Default = 50, Callback = function(v) print(v) end})
-    ExtraTab:CreateLabel("Label / section example")
+    RANARTH LIB (MOBILE SIZED & STATIC BORDERS)
     ==========================================
 ]]
 
@@ -53,14 +24,13 @@ local SidebarColor = Color3.fromRGB(10, 13, 30)
 local ElementColor = Color3.fromRGB(20, 25, 50)
 local NeonColor = Color3.fromRGB(0, 255, 255)
 local PurpleNeon = Color3.fromRGB(170, 0, 255)
+local StaticStroke = Color3.fromRGB(60, 60, 70)
 local AnimSpeed = 2
 
 local function GetCustomIcon(url, filename)
     if getcustomasset and writefile and isfile then
         local success, result = pcall(function()
-            if not isfile(filename) then
-                writefile(filename, game:HttpGet(url))
-            end
+            if not isfile(filename) then writefile(filename, game:HttpGet(url)) end
             return getcustomasset(filename)
         end)
         if success then return result end
@@ -72,9 +42,6 @@ local ProfileIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83
 local GamesIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83bd1e82dbfad83d8de25919685307c902b50465/Games.png"
 local SettingsIconURL = "https://raw.githubusercontent.com/ranarth/Ranarth-hub/83bd1e82dbfad83d8de25919685307c902b50465/Settings.png"
 
--- ==========================================
--- LIBRARY / WINDOW / TAB
--- ==========================================
 local Library = {}
 local Window = {}
 Window.__index = Window
@@ -84,8 +51,6 @@ Tab.__index = Tab
 function Library:CreateWindow(config)
     config = config or {}
     local WindowName = config.Name or "RANARTH HUB"
-    
-    -- Webhook injected as default
     local WebhookURL = config.Webhook or "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k"
     local LoadingEnabled = (config.LoadingEnabled ~= false)
 
@@ -93,15 +58,14 @@ function Library:CreateWindow(config)
     self.AnimatedStrokes = {}
     self.Tabs = {}
     self._sidebarButtons = {}
-
-    -- ---------- Discord Webhook ----------
+    
+        -- ---------- Discord Webhook ----------
     if WebhookURL ~= "" then
         task.spawn(function()
             local executorName = "Unknown"
             if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
             local gameName = game.Name
             pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
-            local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
             local data = {
                 ["embeds"] = {{
                     ["title"] = WindowName .. " Executed!",
@@ -113,18 +77,17 @@ function Library:CreateWindow(config)
                         {["name"] = "User ID", ["value"] = tostring(PlayerId), ["inline"] = true},
                         {["name"] = "Executor", ["value"] = executorName, ["inline"] = true},
                         {["name"] = "Game Name", ["value"] = gameName, ["inline"] = true},
-                        {["name"] = "Game ID", ["value"] = tostring(game.PlaceId), ["inline"] = true},
-                        {["name"] = "Game Link", ["value"] = gameLink, ["inline"] = false},
+                        {["name"] = "Game Link", ["value"] = "https://www.roblox.com/games/"..tostring(game.PlaceId), ["inline"] = false},
                     },
                     ["thumbnail"] = {["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId="..PlayerId.."&width=420&height=420&format=png"}
                 }}
             }
-            local requestFunc = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-            if requestFunc then pcall(function() requestFunc({Url = WebhookURL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)}) end) end
+            local reqFunc = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+            if reqFunc then pcall(function() reqFunc({Url = WebhookURL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)}) end) end
         end)
     end
-    
-        -- ---------- Root GUI ----------
+
+    -- ---------- Root GUI ----------
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "RanarthLib_" .. WindowName:gsub("%s+", "")
     ScreenGui.ResetOnSpawn = false
@@ -135,12 +98,13 @@ function Library:CreateWindow(config)
     ScreenGui.Parent = UI_Parent
     self.ScreenGui = ScreenGui
 
+    -- UI Diperkecil menjadi 480x300
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
     MainFrame.BackgroundColor3 = BgColor
     MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -270, 0.5, -180)
-    MainFrame.Size = UDim2.new(0, 540, 0, 360)
+    MainFrame.Position = UDim2.new(0.5, -240, 0.5, -150)
+    MainFrame.Size = UDim2.new(0, 480, 0, 300)
     MainFrame.ClipsDescendants = true
     MainFrame.Visible = not LoadingEnabled
     self.MainFrame = MainFrame
@@ -176,12 +140,8 @@ function Library:CreateWindow(config)
     TitleText.TextSize = 20
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     TitleText.TextColor3 = Color3.new(1, 1, 1)
-
     local TitleGradient = Instance.new("UIGradient", TitleText)
-    TitleGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, NeonColor),
-        ColorSequenceKeypoint.new(1, PurpleNeon)
-    })
+    TitleGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, NeonColor), ColorSequenceKeypoint.new(1, PurpleNeon)})
 
     local CloseBtn = Instance.new("TextButton", Header)
     CloseBtn.Size = UDim2.new(0, 35, 1, 0)
@@ -203,17 +163,15 @@ function Library:CreateWindow(config)
     MinimizeBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
         if minimized then
-            self.Sidebar.Visible = false
-            self.ContentContainer.Visible = false
-            TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 540, 0, 35)}):Play()
+            self.Sidebar.Visible = false; self.ContentContainer.Visible = false
+            TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 480, 0, 35)}):Play()
         else
-            self.Sidebar.Visible = true
-            self.ContentContainer.Visible = true
-            TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 540, 0, 360)}):Play()
+            self.Sidebar.Visible = true; self.ContentContainer.Visible = true
+            TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 480, 0, 300)}):Play()
         end
     end)
-
-    -- ---------- Dragging ----------
+    
+        -- ---------- Dragging ----------
     local dragging, dragStart, startPos
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -264,7 +222,7 @@ function Library:CreateWindow(config)
     ContentContainer.BackgroundTransparency = 1
     self.ContentContainer = ContentContainer
 
-    -- ---------- Confirm Dialog (shared per window) ----------
+    -- ---------- Confirm Dialog (Animasi Stroke Dibuang) ----------
     local ConfirmOverlay = Instance.new("Frame", ScreenGui)
     ConfirmOverlay.Size = UDim2.new(1, 0, 1, 0)
     ConfirmOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -281,9 +239,10 @@ function Library:CreateWindow(config)
     ConfirmBox.ZIndex = 51
     Instance.new("UICorner", ConfirmBox).CornerRadius = UDim.new(0, 8)
 
+    -- Stroke static box
     local ConfirmStroke = Instance.new("UIStroke", ConfirmBox)
-    ConfirmStroke.Thickness = 2
-    table.insert(self.AnimatedStrokes, ConfirmStroke)
+    ConfirmStroke.Thickness = 1
+    ConfirmStroke.Color = StaticStroke 
 
     local ConfirmText = Instance.new("TextLabel", ConfirmBox)
     ConfirmText.BackgroundTransparency = 1
@@ -305,7 +264,7 @@ function Library:CreateWindow(config)
     ConfirmYesBtn.TextColor3 = Color3.fromRGB(85, 255, 127)
     ConfirmYesBtn.ZIndex = 51
     Instance.new("UICorner", ConfirmYesBtn).CornerRadius = UDim.new(0, 6)
-    table.insert(self.AnimatedStrokes, Instance.new("UIStroke", ConfirmYesBtn))
+    -- Stroke animasi tombol dihapus total!
 
     local ConfirmNoBtn = Instance.new("TextButton", ConfirmBox)
     ConfirmNoBtn.Size = UDim2.new(0.42, 0, 0, 36)
@@ -317,7 +276,7 @@ function Library:CreateWindow(config)
     ConfirmNoBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
     ConfirmNoBtn.ZIndex = 51
     Instance.new("UICorner", ConfirmNoBtn).CornerRadius = UDim.new(0, 6)
-    table.insert(self.AnimatedStrokes, Instance.new("UIStroke", ConfirmNoBtn))
+    -- Stroke animasi tombol dihapus total!
 
     function self:ShowConfirmDialog(message, onConfirm)
         ConfirmText.Text = message
@@ -331,8 +290,8 @@ function Library:CreateWindow(config)
         yesConn = ConfirmYesBtn.MouseButton1Click:Connect(function() CloseDialog(); onConfirm() end)
         noConn = ConfirmNoBtn.MouseButton1Click:Connect(function() CloseDialog() end)
     end
-
-    -- ---------- Stroke / Glow Animation Loop ----------
+    
+        -- ---------- Stroke / Glow Animation Loop ----------
     task.spawn(function()
         while ScreenGui.Parent and task.wait() do
             local lerpValue = (math.sin(tick() * AnimSpeed) + 1) / 2
@@ -344,13 +303,13 @@ function Library:CreateWindow(config)
             if SidebarLine then SidebarLine.BackgroundColor3 = currentColor end
         end
     end)
-    
-        -- ---------- Optional Rocket Loading Screen ----------
+
+    -- ---------- Optional Rocket Loading Screen ----------
     if LoadingEnabled then
         local LoadingFrame = Instance.new("Frame", ScreenGui)
         LoadingFrame.Name = "LoadingFrame"
-        LoadingFrame.Size = UDim2.new(0, 540, 0, 360)
-        LoadingFrame.Position = UDim2.new(0.5, -270, 0.5, -180)
+        LoadingFrame.Size = UDim2.new(0, 480, 0, 300) -- Dikecilkan!
+        LoadingFrame.Position = UDim2.new(0.5, -240, 0.5, -150)
         LoadingFrame.BackgroundColor3 = BgColor
         LoadingFrame.BorderSizePixel = 0
         Instance.new("UICorner", LoadingFrame).CornerRadius = UDim.new(0, 8)
@@ -360,19 +319,16 @@ function Library:CreateWindow(config)
         LoadingStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         table.insert(self.AnimatedStrokes, LoadingStroke)
 
-        -- Jumping Text Container
         local TextContainer = Instance.new("Frame", LoadingFrame)
         TextContainer.Size = UDim2.new(1, 0, 0, 50)
         TextContainer.Position = UDim2.new(0, 0, 0.35, -25)
         TextContainer.BackgroundTransparency = 1
-
         local Layout = Instance.new("UIListLayout", TextContainer)
         Layout.FillDirection = Enum.FillDirection.Horizontal
         Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         Layout.VerticalAlignment = Enum.VerticalAlignment.Center
         Layout.Padding = UDim.new(0, 3)
 
-        -- Status Label: Loading...
         local LoadingText = Instance.new("TextLabel", LoadingFrame)
         LoadingText.Size = UDim2.new(1, 0, 0, 20)
         LoadingText.Position = UDim2.new(0, 0, 0.54, 0)
@@ -382,7 +338,6 @@ function Library:CreateWindow(config)
         LoadingText.TextSize = 16
         LoadingText.TextColor3 = Color3.fromRGB(220, 220, 230)
 
-        -- Trajectory Path Background
         local TrajectoryPath = Instance.new("Frame", LoadingFrame)
         TrajectoryPath.Size = UDim2.new(0, 280, 0, 3) 
         TrajectoryPath.Position = UDim2.new(0.5, -140, 0.68, 0)
@@ -390,20 +345,14 @@ function Library:CreateWindow(config)
         TrajectoryPath.BorderSizePixel = 0
         Instance.new("UICorner", TrajectoryPath).CornerRadius = UDim.new(1, 0)
 
-        -- Rocket Trail Fill (Fire)
         local BoostTrail = Instance.new("Frame", TrajectoryPath)
         BoostTrail.Size = UDim2.new(0, 0, 1, 0)
         BoostTrail.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
         BoostTrail.BorderSizePixel = 0
         Instance.new("UICorner", BoostTrail).CornerRadius = UDim.new(1, 0)
-
         local TrailGradient = Instance.new("UIGradient", BoostTrail)
-        TrailGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 230, 0))
-        })
+        TrailGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 230, 0))})
 
-        -- Finish Point: MOON 🌕
         local MoonEmoji = Instance.new("TextLabel", TrajectoryPath)
         MoonEmoji.Size = UDim2.new(0, 30, 0, 30)
         MoonEmoji.Position = UDim2.new(1, 10, 0.5, 0)
@@ -412,7 +361,6 @@ function Library:CreateWindow(config)
         MoonEmoji.Text = "🌕"
         MoonEmoji.TextSize = 25
 
-        -- Loading Indicator: ROCKET 🚀
         local RocketEmoji = Instance.new("TextLabel", BoostTrail)
         RocketEmoji.Size = UDim2.new(0, 30, 0, 30)
         RocketEmoji.Position = UDim2.new(1, 0, 0.5, 0)
@@ -422,17 +370,13 @@ function Library:CreateWindow(config)
         RocketEmoji.TextSize = 25
         RocketEmoji.Rotation = 45
 
-        -- Splitting jumping text letters (Automatically fetches from config.Name)
         local titleString = WindowName
         local letterLabels = {}
-
         for i = 1, #titleString do
             local char = string.sub(titleString, i, i)
-            
             local wrapper = Instance.new("Frame", TextContainer)
             wrapper.BackgroundTransparency = 1
             wrapper.Size = UDim2.new(0, char == " " and 14 or 24, 1, 0)
-            
             local charLabel = Instance.new("TextLabel", wrapper)
             charLabel.BackgroundTransparency = 1
             charLabel.Size = UDim2.new(1, 0, 1, 0)
@@ -441,30 +385,17 @@ function Library:CreateWindow(config)
             charLabel.Font = Enum.Font.Arcade
             charLabel.TextSize = 34
             charLabel.TextColor3 = Color3.new(1, 1, 1)
-            
             local grad = Instance.new("UIGradient", charLabel)
-            grad.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, NeonColor),
-                ColorSequenceKeypoint.new(1, PurpleNeon)
-            })
-            
-            if char ~= " " then
-                table.insert(letterLabels, charLabel)
-            end
+            grad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, NeonColor), ColorSequenceKeypoint.new(1, PurpleNeon)})
+            if char ~= " " then table.insert(letterLabels, charLabel) end
         end
 
         task.spawn(function()
-            -- Rocket 🚀 flies towards the moon 🌕 (Fire Trail extends)
-            TweenService:Create(BoostTrail, TweenInfo.new(3.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Size = UDim2.new(1, 0, 1, 0)
-            }):Play()
-
-            -- 3 Cycles of Wave Text Jumps
+            TweenService:Create(BoostTrail, TweenInfo.new(3.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
             for cycle = 1, 3 do
                 for _, label in ipairs(letterLabels) do
                     TweenService:Create(label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, -16)}):Play()
                     task.wait(0.06)
-                    
                     task.spawn(function()
                         task.wait(0.06)
                         TweenService:Create(label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {Position = UDim2.new(0, 0, 0, 0)}):Play()
@@ -472,8 +403,6 @@ function Library:CreateWindow(config)
                 end
                 task.wait(0.4)
             end
-            
-            -- Fade-Out Transition for All Loading Components
             local fade = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             TweenService:Create(LoadingFrame, fade, {BackgroundTransparency = 1}):Play()
             TweenService:Create(LoadingText, fade, {TextTransparency = 1}):Play()
@@ -482,34 +411,22 @@ function Library:CreateWindow(config)
             TweenService:Create(BoostTrail, fade, {BackgroundTransparency = 1}):Play()
             TweenService:Create(RocketEmoji, fade, {TextTransparency = 1}):Play()
             TweenService:Create(MoonEmoji, fade, {TextTransparency = 1}):Play()
-            for _, label in ipairs(letterLabels) do
-                TweenService:Create(label, fade, {TextTransparency = 1}):Play()
-            end
-            
+            for _, label in ipairs(letterLabels) do TweenService:Create(label, fade, {TextTransparency = 1}):Play() end
             task.wait(0.4)
             LoadingFrame:Destroy()
             
-            -- Pop-In Main Hub Elements (Main UI Opens)
             MainFrame.Size = UDim2.new(0, 0, 0, 0)
             MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
             MainFrame.Visible = true
             TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 540, 0, 360),
-                Position = UDim2.new(0.5, -270, 0.5, -180)
+                Size = UDim2.new(0, 480, 0, 300), -- Sesuai ukuran kecil
+                Position = UDim2.new(0.5, -240, 0.5, -150)
             }):Play()
         end)
     end
     
-        -- ==========================================
-    -- DEFAULT TABS SETUP
-    -- ==========================================
-
-    -- ---------- 1. Profile ----------
-    local ProfileTab = self:CreateTab({
-        Name = "Profile",
-        Icon = GetCustomIcon(ProfileIconURL, "Ranarth_Profile.png"),
-        NoListLayout = true,
-    })
+        -- ---------- 1. Profile ----------
+    local ProfileTab = self:CreateTab({ Name = "Profile", Icon = GetCustomIcon(ProfileIconURL, "Ranarth_Profile.png"), NoListLayout = true })
     self.ProfileTab = ProfileTab
 
     local AvatarImage = Instance.new("ImageLabel", ProfileTab.Page)
@@ -548,9 +465,7 @@ function Library:CreateWindow(config)
     TimeText.Font = Enum.Font.Gotham
     TimeText.TextColor3 = Color3.fromRGB(200, 200, 200)
     TimeText.TextSize = 14
-    task.spawn(function()
-        while task.wait(1) do TimeText.Text = "Time: " .. os.date("%A, %I:%M:%S %p") end
-    end)
+    task.spawn(function() while task.wait(1) do TimeText.Text = "Time: " .. os.date("%A, %I:%M:%S %p") end end)
 
     local RegionText = Instance.new("TextLabel", ProfileTab.Page)
     RegionText.BackgroundTransparency = 1
@@ -568,11 +483,7 @@ function Library:CreateWindow(config)
     end)
 
     -- ---------- 2. Games ----------
-    local GamesTab = self:CreateTab({
-        Name = "Games",
-        Icon = GetCustomIcon(GamesIconURL, "Ranarth_Games.png"),
-        NoListLayout = true,
-    })
+    local GamesTab = self:CreateTab({ Name = "Games", Icon = GetCustomIcon(GamesIconURL, "Ranarth_Games.png"), NoListLayout = true })
     self.GamesTab = GamesTab
 
     local SearchBoxContainer = Instance.new("Frame", GamesTab.Page)
@@ -592,10 +503,11 @@ function Library:CreateWindow(config)
     Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 6)
     Instance.new("UIPadding", SearchBox).PaddingLeft = UDim.new(0, 10)
 
+    -- Animasi Stroke Search Box DIHAPUS (Hanya warna abu static)
     local SearchStroke = Instance.new("UIStroke", SearchBox)
     SearchStroke.Thickness = 1
     SearchStroke.Transparency = 0.5
-    table.insert(self.AnimatedStrokes, SearchStroke)
+    SearchStroke.Color = StaticStroke
 
     local GameListScroll = Instance.new("ScrollingFrame", GamesTab.Page)
     GameListScroll.Position = UDim2.new(0, 0, 0, 55)
@@ -610,7 +522,7 @@ function Library:CreateWindow(config)
     GameListLayout.Padding = UDim.new(0, 10)
     GameListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    GamesTab.ButtonHolder = GameListScroll -- CreateGameButton/CreateButton from this tab goes here
+    GamesTab.ButtonHolder = GameListScroll 
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local text = SearchBox.Text:lower()
@@ -618,67 +530,48 @@ function Library:CreateWindow(config)
             if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text)) end
         end
     end)
-
-    -- ---------- 3. Settings ----------
-    local SettingsTab = self:CreateTab({
-        Name = "Settings",
-        Icon = GetCustomIcon(SettingsIconURL, "Ranarth_Settings.png"),
-    })
+    
+        -- ---------- 3. Settings ----------
+    local SettingsTab = self:CreateTab({ Name = "Settings", Icon = GetCustomIcon(SettingsIconURL, "Ranarth_Settings.png") })
     self.SettingsTab = SettingsTab
 
     SettingsTab:CreateSlider({
         Name = "UI Opacity", Min = 0, Max = 100, Default = 100, Suffix = "%",
         Callback = function(value)
             local transValue = 1 - (value / 100)
-            MainFrame.BackgroundTransparency = transValue
-            Sidebar.BackgroundTransparency = transValue
-            Header.BackgroundTransparency = transValue
+            MainFrame.BackgroundTransparency = transValue; Sidebar.BackgroundTransparency = transValue; Header.BackgroundTransparency = transValue
         end
     })
 
-    SettingsTab:CreateSlider({
-        Name = "UI Size", Min = 50, Max = 150, Default = 100, Suffix = "%",
-        Callback = function(value) MainScale.Scale = value / 100 end
-    })
+    SettingsTab:CreateSlider({ Name = "UI Size", Min = 50, Max = 150, Default = 100, Suffix = "%", Callback = function(value) MainScale.Scale = value / 100 end })
 
     return self
 end
 
--- ==========================================
--- Window:CreateTab
--- ==========================================
 function Window:CreateTab(config)
     config = config or {}
-    local tabName = config.Name or "Tab"
-    local icon = config.Icon or ""
-
     local page = Instance.new("ScrollingFrame", self.ContentContainer)
-    page.Name = tabName .. "Page"
+    page.Name = (config.Name or "Tab") .. "Page"
     page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.BorderSizePixel = 0
-    page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = NeonColor
-    page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    page.Visible = (next(self.Tabs) == nil) -- first tab created is visible by default
+    page.BackgroundTransparency = 1; page.BorderSizePixel = 0
+    page.ScrollBarThickness = 3; page.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 255)
+    page.CanvasSize = UDim2.new(0, 0, 0, 0); page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.Visible = (next(self.Tabs) == nil)
 
     if not config.NoListLayout then
         local layout = Instance.new("UIListLayout", page)
-        layout.Padding = UDim.new(0, 10)
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        layout.Padding = UDim.new(0, 10); layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 10)
     end
 
     local sidebarBtn = Instance.new("ImageButton", self.ButtonContainer)
-    sidebarBtn.BackgroundColor3 = ElementColor
+    sidebarBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 50)
     sidebarBtn.Size = UDim2.new(0, 40, 0, 40)
-    sidebarBtn.Image = icon
+    sidebarBtn.Image = config.Icon or ""
     sidebarBtn.ScaleType = Enum.ScaleType.Fit
     Instance.new("UICorner", sidebarBtn).CornerRadius = UDim.new(0, 8)
     local sidebarStroke = Instance.new("UIStroke", sidebarBtn)
-    sidebarStroke.Thickness = 1
-    sidebarStroke.Transparency = 0.5
+    sidebarStroke.Thickness = 1; sidebarStroke.Transparency = 0.5
     table.insert(self.AnimatedStrokes, sidebarStroke)
 
     sidebarBtn.MouseButton1Click:Connect(function()
@@ -686,106 +579,58 @@ function Window:CreateTab(config)
         page.Visible = true
     end)
 
-    local tabObj = setmetatable({
-        Page = page,
-        ButtonHolder = page, -- CreateButton/CreateGameButton parent here; Games tab overrides this to its GameListScroll
-        Window = self,
-    }, Tab)
-
+    local tabObj = setmetatable({Page = page, ButtonHolder = page, Window = self}, Tab)
     table.insert(self.Tabs, tabObj)
     return tabObj
 end
 
--- ==========================================
--- Tab elements
--- ==========================================
 function Tab:CreateButton(config)
     config = config or {}
     local btn = Instance.new("TextButton", self.ButtonHolder or self.Page)
-    btn.Size = UDim2.new(0.9, 0, 0, 45)
-    btn.BackgroundColor3 = ElementColor
-    btn.Text = config.Name or "Button"
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 15
-    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Size = UDim2.new(0.9, 0, 0, 45); btn.BackgroundColor3 = Color3.fromRGB(20, 25, 50)
+    btn.Text = config.Name or "Button"; btn.Font = Enum.Font.GothamBold; btn.TextSize = 15; btn.TextColor3 = Color3.new(1, 1, 1)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Thickness = 1
-    stroke.Transparency = 0.6
+    stroke.Thickness = 1; stroke.Transparency = 0.6
     table.insert(self.Window.AnimatedStrokes, stroke)
-
-    btn.MouseButton1Click:Connect(function()
-        if config.Callback then config.Callback() end
-    end)
+    btn.MouseButton1Click:Connect(function() if config.Callback then config.Callback() end end)
     return btn
 end
 
--- Special game list button: if PlaceId differs, show warning (no auto-teleport).
 function Tab:CreateGameButton(config)
     config = config or {}
-    local gameName = config.Name or "Game"
-    local placeId = config.PlaceId or 0
-    local callback = config.Callback or function() end
+    local gameName = config.Name or "Game"; local placeId = config.PlaceId or 0
     local isUniversal = (placeId == 0)
 
     local btn = Instance.new("TextButton", self.ButtonHolder or self.Page)
-    btn.Size = UDim2.new(0.9, 0, 0, 55)
-    btn.BackgroundColor3 = ElementColor
-    btn.Text = ""
-    btn.Name = gameName
+    btn.Size = UDim2.new(0.9, 0, 0, 55); btn.BackgroundColor3 = Color3.fromRGB(20, 25, 50)
+    btn.Text = ""; btn.Name = gameName
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     local btnStroke = Instance.new("UIStroke", btn)
-    btnStroke.Thickness = 1
-    btnStroke.Transparency = 0.6
+    btnStroke.Thickness = 1; btnStroke.Transparency = 0.6
     table.insert(self.Window.AnimatedStrokes, btnStroke)
 
     local icon = Instance.new("ImageLabel", btn)
-    icon.Size = UDim2.new(0, 45, 0, 45)
-    icon.Position = UDim2.new(0, 5, 0.5, -22.5)
-    icon.BackgroundColor3 = HeaderColor
-    icon.BorderSizePixel = 0
+    icon.Size = UDim2.new(0, 45, 0, 45); icon.Position = UDim2.new(0, 5, 0.5, -22.5)
+    icon.BackgroundColor3 = Color3.fromRGB(8, 10, 25); icon.BorderSizePixel = 0
     Instance.new("UICorner", icon).CornerRadius = UDim.new(0, 6)
-    if isUniversal then
-        icon.Image = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
-    else
-        task.spawn(function()
-            pcall(function()
-                local assetInfo = MarketplaceService:GetProductInfo(placeId)
-                if assetInfo and assetInfo.IconImageAssetId then
-                    icon.Image = "rbxassetid://" .. assetInfo.IconImageAssetId
-                end
-            end)
-        end)
-    end
+    if isUniversal then icon.Image = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
+    else task.spawn(function() pcall(function() local assetInfo = game:GetService("MarketplaceService"):GetProductInfo(placeId); if assetInfo and assetInfo.IconImageAssetId then icon.Image = "rbxassetid://" .. assetInfo.IconImageAssetId end end) end) end
 
     local title = Instance.new("TextLabel", btn)
-    title.BackgroundTransparency = 1
-    title.Size = UDim2.new(1, -65, 1, 0)
-    title.Position = UDim2.new(0, 60, 0, 0)
-    title.Font = Enum.Font.GothamBold
-    title.Text = gameName
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.TextSize = 16
-    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.BackgroundTransparency = 1; title.Size = UDim2.new(1, -65, 1, 0)
+    title.Position = UDim2.new(0, 60, 0, 0); title.Font = Enum.Font.GothamBold
+    title.Text = gameName; title.TextColor3 = Color3.new(1, 1, 1)
+    title.TextSize = 16; title.TextXAlignment = Enum.TextXAlignment.Left
 
     local function RunScript()
-        title.Text = "Executing Script..."
-        title.TextColor3 = Color3.fromRGB(85, 255, 127)
-        task.wait(0.5)
-        title.Text = gameName
-        title.TextColor3 = Color3.new(1, 1, 1)
-        callback()
+        title.Text = "Executing Script..."; title.TextColor3 = Color3.fromRGB(85, 255, 127)
+        task.wait(0.5); title.Text = gameName; title.TextColor3 = Color3.new(1, 1, 1)
+        if config.Callback then config.Callback() end
     end
 
     btn.MouseButton1Click:Connect(function()
-        if isUniversal or game.PlaceId == placeId then
-            RunScript()
-        else
-            self.Window:ShowConfirmDialog(
-                "You are in a different place, do you still want to execute this script?",
-                RunScript
-            )
-        end
+        if isUniversal or game.PlaceId == placeId then RunScript() else self.Window:ShowConfirmDialog("You are in a different place, do you still want to execute this script?", RunScript) end
     end)
     return btn
 end
@@ -794,33 +639,25 @@ function Tab:CreateToggle(config)
     config = config or {}
     local state = config.Default or false
     local container = Instance.new("Frame", self.ButtonHolder or self.Page)
-    container.BackgroundColor3 = ElementColor
-    container.Size = UDim2.new(0.9, 0, 0, 45)
+    container.BackgroundColor3 = Color3.fromRGB(20, 25, 50); container.Size = UDim2.new(0.9, 0, 0, 45)
     Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
     local stroke = Instance.new("UIStroke", container)
     stroke.Thickness = 1; stroke.Transparency = 0.6
     table.insert(self.Window.AnimatedStrokes, stroke)
 
     local label = Instance.new("TextLabel", container)
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(1, -60, 1, 0)
-    label.Position = UDim2.new(0, 12, 0, 0)
-    label.Font = Enum.Font.GothamBold
-    label.Text = config.Name or "Toggle"
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextSize = 15
-    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1; label.Size = UDim2.new(1, -60, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0); label.Font = Enum.Font.GothamBold
+    label.Text = config.Name or "Toggle"; label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 15; label.TextXAlignment = Enum.TextXAlignment.Left
 
     local knob = Instance.new("TextButton", container)
-    knob.Size = UDim2.new(0, 40, 0, 22)
-    knob.Position = UDim2.new(1, -50, 0.5, -11)
-    knob.BackgroundColor3 = state and NeonColor or Color3.fromRGB(60, 60, 70)
-    knob.Text = ""
+    knob.Size = UDim2.new(0, 40, 0, 22); knob.Position = UDim2.new(1, -50, 0.5, -11)
+    knob.BackgroundColor3 = state and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(60, 60, 70); knob.Text = ""
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
     knob.MouseButton1Click:Connect(function()
-        state = not state
-        knob.BackgroundColor3 = state and NeonColor or Color3.fromRGB(60, 60, 70)
+        state = not state; knob.BackgroundColor3 = state and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(60, 60, 70)
         if config.Callback then config.Callback(state) end
     end)
     return knob
@@ -828,30 +665,24 @@ end
 
 function Tab:CreateSlider(config)
     config = config or {}
-    local min = config.Min or 0
-    local max = config.Max or 100
-    local default = config.Default or min
-    local defaultPercent = (default - min) / (max - min)
-
+    local min = config.Min or 0; local max = config.Max or 100
+    local default = config.Default or min; local defaultPercent = (default - min) / (max - min)
     local container = Instance.new("Frame", self.ButtonHolder or self.Page)
-    container.BackgroundTransparency = 1
-    container.Size = UDim2.new(0.9, 0, 0, 50)
+    container.BackgroundTransparency = 1; container.Size = UDim2.new(0.9, 0, 0, 50)
 
     local title = Instance.new("TextLabel", container)
     title.BackgroundTransparency = 1; title.Size = UDim2.new(1, -50, 0, 20)
     title.Font = Enum.Font.GothamBold; title.Text = config.Name or "Slider"
-    title.TextColor3 = Color3.new(1, 1, 1); title.TextSize = 14
-    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.TextColor3 = Color3.new(1, 1, 1); title.TextSize = 14; title.TextXAlignment = Enum.TextXAlignment.Left
 
     local valLabel = Instance.new("TextLabel", container)
     valLabel.BackgroundTransparency = 1; valLabel.Position = UDim2.new(1, -50, 0, 0)
     valLabel.Size = UDim2.new(0, 50, 0, 20); valLabel.Font = Enum.Font.GothamBold
     valLabel.Text = tostring(math.floor(default)) .. (config.Suffix or "")
-    valLabel.TextColor3 = NeonColor; valLabel.TextSize = 14
-    valLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valLabel.TextColor3 = Color3.fromRGB(0, 255, 255); valLabel.TextSize = 14; valLabel.TextXAlignment = Enum.TextXAlignment.Right
 
     local sliderBg = Instance.new("Frame", container)
-    sliderBg.BackgroundColor3 = ElementColor; sliderBg.Position = UDim2.new(0, 0, 0, 30)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(20, 25, 50); sliderBg.Position = UDim2.new(0, 0, 0, 30)
     sliderBg.Size = UDim2.new(1, 0, 0, 12)
     Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
     local sliderStroke = Instance.new("UIStroke", sliderBg)
@@ -859,20 +690,15 @@ function Tab:CreateSlider(config)
     table.insert(self.Window.AnimatedStrokes, sliderStroke)
 
     local sliderFill = Instance.new("Frame", sliderBg)
-    sliderFill.BackgroundColor3 = NeonColor; sliderFill.Size = UDim2.new(defaultPercent, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 255); sliderFill.Size = UDim2.new(defaultPercent, 0, 1, 0)
     Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
 
     local sliderBtn = Instance.new("TextButton", sliderBg)
     sliderBtn.BackgroundTransparency = 1; sliderBtn.Size = UDim2.new(1, 0, 1, 0); sliderBtn.Text = ""
-
     local isDragging = false
-    sliderBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = true end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = false end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
+    sliderBtn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = true end end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = false end end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local percent = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
             sliderFill.Size = UDim2.new(percent, 0, 1, 0)
@@ -886,13 +712,9 @@ end
 
 function Tab:CreateLabel(text)
     local label = Instance.new("TextLabel", self.ButtonHolder or self.Page)
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(0.9, 0, 0, 25)
-    label.Font = Enum.Font.GothamBold
-    label.Text = text or ""
-    label.TextColor3 = NeonColor
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1; label.Size = UDim2.new(0.9, 0, 0, 25)
+    label.Font = Enum.Font.GothamBold; label.Text = text or ""
+    label.TextColor3 = Color3.fromRGB(0, 255, 255); label.TextSize = 14; label.TextXAlignment = Enum.TextXAlignment.Left
     return label
 end
 
