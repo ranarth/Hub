@@ -1,6 +1,6 @@
 --[[
     ==========================================
-    RANARTH LIB (MOBILE SIZED & STATIC BORDERS)
+    RANARTH HUB
     ==========================================
 ]]
 
@@ -28,10 +28,24 @@ local StaticStroke = Color3.fromRGB(60, 60, 70)
 local AnimSpeed = 2
 
 local function GetCustomIcon(url, filename)
+    local HubFolder = "Ranarth HUB"
+    
+    -- Membuat folder jika belum ada di workspace executor
+    if isfolder and makefolder then
+        pcall(function()
+            if not isfolder(HubFolder) then
+                makefolder(HubFolder)
+            end
+        end)
+    end
+    
+    -- Menentukan path file di dalam folder Ranarth HUB
+    local filePath = HubFolder .. "/" .. filename
+
     if getcustomasset and writefile and isfile then
         local success, result = pcall(function()
-            if not isfile(filename) then writefile(filename, game:HttpGet(url)) end
-            return getcustomasset(filename)
+            if not isfile(filePath) then writefile(filePath, game:HttpGet(url)) end
+            return getcustomasset(filePath)
         end)
         if success then return result end
     end
@@ -98,7 +112,7 @@ function Library:CreateWindow(config)
     ScreenGui.Parent = UI_Parent
     self.ScreenGui = ScreenGui
 
-    -- UI Diperkecil menjadi 480x300
+    -- UI Default Ukuran Kecil (480x300)
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
     MainFrame.BackgroundColor3 = BgColor
@@ -188,6 +202,36 @@ function Library:CreateWindow(config)
         end
     end)
 
+    -- ---------- Resizer (Pojok Kanan Bawah) ----------
+    local Resizer = Instance.new("TextButton", MainFrame)
+    Resizer.Name = "Resizer"
+    Resizer.Size = UDim2.new(0, 16, 0, 16)
+    Resizer.Position = UDim2.new(1, -16, 1, -16)
+    Resizer.BackgroundTransparency = 1
+    Resizer.Text = "◢"
+    Resizer.Font = Enum.Font.Gotham
+    Resizer.TextSize = 14
+    Resizer.TextColor3 = NeonColor
+    Resizer.ZIndex = 100
+
+    local resizing, resizeStart, startSize
+    Resizer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            resizing = true; resizeStart = input.Position; startSize = MainFrame.AbsoluteSize
+        end
+    end)
+    Resizer.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then resizing = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - resizeStart
+            local newWidth = math.clamp(startSize.X + delta.X, 400, 1000) -- Batas minimal lebar 400
+            local newHeight = math.clamp(startSize.Y + delta.Y, 250, 800) -- Batas minimal tinggi 250
+            MainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+        end
+    end)
+
     -- ---------- Sidebar ----------
     local Sidebar = Instance.new("Frame", MainFrame)
     Sidebar.Name = "Sidebar"
@@ -239,7 +283,6 @@ function Library:CreateWindow(config)
     ConfirmBox.ZIndex = 51
     Instance.new("UICorner", ConfirmBox).CornerRadius = UDim.new(0, 8)
 
-    -- Stroke static box
     local ConfirmStroke = Instance.new("UIStroke", ConfirmBox)
     ConfirmStroke.Thickness = 1
     ConfirmStroke.Color = StaticStroke 
@@ -264,7 +307,6 @@ function Library:CreateWindow(config)
     ConfirmYesBtn.TextColor3 = Color3.fromRGB(85, 255, 127)
     ConfirmYesBtn.ZIndex = 51
     Instance.new("UICorner", ConfirmYesBtn).CornerRadius = UDim.new(0, 6)
-    -- Stroke animasi tombol dihapus total!
 
     local ConfirmNoBtn = Instance.new("TextButton", ConfirmBox)
     ConfirmNoBtn.Size = UDim2.new(0.42, 0, 0, 36)
@@ -276,7 +318,6 @@ function Library:CreateWindow(config)
     ConfirmNoBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
     ConfirmNoBtn.ZIndex = 51
     Instance.new("UICorner", ConfirmNoBtn).CornerRadius = UDim.new(0, 6)
-    -- Stroke animasi tombol dihapus total!
 
     function self:ShowConfirmDialog(message, onConfirm)
         ConfirmText.Text = message
@@ -308,7 +349,7 @@ function Library:CreateWindow(config)
     if LoadingEnabled then
         local LoadingFrame = Instance.new("Frame", ScreenGui)
         LoadingFrame.Name = "LoadingFrame"
-        LoadingFrame.Size = UDim2.new(0, 480, 0, 300) -- Dikecilkan!
+        LoadingFrame.Size = UDim2.new(0, 480, 0, 300) -- Ukuran default kecil
         LoadingFrame.Position = UDim2.new(0.5, -240, 0.5, -150)
         LoadingFrame.BackgroundColor3 = BgColor
         LoadingFrame.BorderSizePixel = 0
@@ -426,7 +467,7 @@ function Library:CreateWindow(config)
     end
     
         -- ---------- 1. Profile ----------
-    local ProfileTab = self:CreateTab({ Name = "Profile", Icon = GetCustomIcon(ProfileIconURL, "Ranarth_Profile.png"), NoListLayout = true })
+    local ProfileTab = self:CreateTab({ Name = "Profile", Icon = GetCustomIcon(ProfileIconURL, "Profile.png"), NoListLayout = true })
     self.ProfileTab = ProfileTab
 
     local AvatarImage = Instance.new("ImageLabel", ProfileTab.Page)
@@ -483,7 +524,7 @@ function Library:CreateWindow(config)
     end)
 
     -- ---------- 2. Games ----------
-    local GamesTab = self:CreateTab({ Name = "Games", Icon = GetCustomIcon(GamesIconURL, "Ranarth_Games.png"), NoListLayout = true })
+    local GamesTab = self:CreateTab({ Name = "Games", Icon = GetCustomIcon(GamesIconURL, "Games.png"), NoListLayout = true })
     self.GamesTab = GamesTab
 
     local SearchBoxContainer = Instance.new("Frame", GamesTab.Page)
@@ -532,7 +573,7 @@ function Library:CreateWindow(config)
     end)
     
         -- ---------- 3. Settings ----------
-    local SettingsTab = self:CreateTab({ Name = "Settings", Icon = GetCustomIcon(SettingsIconURL, "Ranarth_Settings.png") })
+    local SettingsTab = self:CreateTab({ Name = "Settings", Icon = GetCustomIcon(SettingsIconURL, "Settings.png") })
     self.SettingsTab = SettingsTab
 
     SettingsTab:CreateSlider({
