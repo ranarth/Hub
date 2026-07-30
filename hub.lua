@@ -655,7 +655,7 @@ end
         end)
     end
     
-        -- ---------- 1. Profile ----------
+            -- ---------- 1. Profile ----------
     local ProfileTab = self:CreateTab({ Name = "Profile", Icon = GetCustomIcon(ProfileIconURL, "Profile.png"), NoListLayout = true })
     self.ProfileTab = ProfileTab
 
@@ -679,10 +679,11 @@ end
     WelcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
     WelcomeText.TextSize = 22
 
+    -- Memperbaiki jarak label (Jarak vertikal diperkecil)
     local StatusText = Instance.new("TextLabel", ProfileTab.Page)
     StatusText.BackgroundTransparency = 1
-    StatusText.Position = UDim2.new(0, 0, 0, 180)
-    StatusText.Size = UDim2.new(1, 0, 0, 25)
+    StatusText.Position = UDim2.new(0, 0, 0, 175) -- Sedikit naik
+    StatusText.Size = UDim2.new(1, 0, 0, 20) -- Tinggi diperkecil
     StatusText.Font = Enum.Font.GothamBold
     StatusText.Text = "Status: Working!"
     StatusText.TextColor3 = Color3.fromRGB(85, 255, 127)
@@ -690,8 +691,8 @@ end
 
     local TimeText = Instance.new("TextLabel", ProfileTab.Page)
     TimeText.BackgroundTransparency = 1
-    TimeText.Position = UDim2.new(0, 0, 0, 210)
-    TimeText.Size = UDim2.new(1, 0, 0, 25)
+    TimeText.Position = UDim2.new(0, 0, 0, 195) -- Merapat ke Status
+    TimeText.Size = UDim2.new(1, 0, 0, 20) -- Tinggi diperkecil
     TimeText.Font = Enum.Font.Gotham
     TimeText.TextColor3 = Color3.fromRGB(200, 200, 200)
     TimeText.TextSize = 14
@@ -699,8 +700,8 @@ end
 
     local RegionText = Instance.new("TextLabel", ProfileTab.Page)
     RegionText.BackgroundTransparency = 1
-    RegionText.Position = UDim2.new(0, 0, 0, 240)
-    RegionText.Size = UDim2.new(1, 0, 0, 25)
+    RegionText.Position = UDim2.new(0, 0, 0, 215) -- Merapat ke Time
+    RegionText.Size = UDim2.new(1, 0, 0, 20) -- Tinggi diperkecil
     RegionText.Font = Enum.Font.Gotham
     RegionText.Text = "Region: Fetching..."
     RegionText.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -733,7 +734,6 @@ end
     Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 6)
     Instance.new("UIPadding", SearchBox).PaddingLeft = UDim.new(0, 10)
 
-    -- Animasi Stroke Search Box DIHAPUS (Hanya warna abu static)
     local SearchStroke = Instance.new("UIStroke", SearchBox)
     SearchStroke.Thickness = 1
     SearchStroke.Transparency = 0.5
@@ -757,7 +757,7 @@ end
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local text = SearchBox.Text:lower()
         for _, child in pairs(GameListScroll:GetChildren()) do
-            if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text, 1, true)) end
+            if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text)) end
         end
     end)
     
