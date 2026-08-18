@@ -65,7 +65,7 @@ Tab.__index = Tab
 function Library:CreateWindow(config)
     config = config or {}
     local WindowName = config.Name or "RANARTH HUB"
-    local WebhookURL = config.Webhook or "https://discord.com/api/webhooks/1516049033989197824/3P_4wiyJoC9MNB2XcUJecTYYRiT6nawfn5XLBq2RLZWFmlhE3zFeOS9WKqF7VLPprS2k"
+    local WebhookURL = config.Webhook or "https://discord.com/api/webhooks/1539367411952656616/l7XPDTPTn3XxjEqnYObBgWqlwuiXMROsGw2cYy52buzrHiTgX8Ntb4YQ_7LCOQX9L5Tj"
     local LoadingEnabled = (config.LoadingEnabled ~= false)
 
     local self = setmetatable({}, Window)
