@@ -654,7 +654,7 @@ end
             }):Play()
         end)
     end
-    
+
             -- ---------- 1. Profile ----------
     local ProfileTab = self:CreateTab({ Name = "Profile", Icon = GetCustomIcon(ProfileIconURL, "Profile.png"), NoListLayout = true })
     self.ProfileTab = ProfileTab
